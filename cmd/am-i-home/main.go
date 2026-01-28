@@ -17,7 +17,7 @@ func usage() {
 	fmt.Fprintf(flag.CommandLine.Output(), "am-i-home - check if a device is connected to your Vodafone HomeStation\n")
 	fmt.Fprintf(flag.CommandLine.Output(), "\nUsage:\n")
 	fmt.Fprintf(flag.CommandLine.Output(), "  am-i-home\n")
-	fmt.Fprintf(flag.CommandLine.Output(), "    Show this help and examples\n")
+	fmt.Fprintf(flag.CommandLine.Output(), "    Show this help\n")
 	fmt.Fprintf(flag.CommandLine.Output(), "\n  am-i-home <FLAGS> list\n")
 	fmt.Fprintf(flag.CommandLine.Output(), "    Returns a list of all active devices\n")
 	fmt.Fprintf(flag.CommandLine.Output(), "\n  am-i-home <FLAGS> list-all\n")
