@@ -1,0 +1,49 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+# Common Go build output in repo root
+# exact executable produced during local runs
+/am-i-home
+/am-i-home*
+
+# Output of the go coverage tool
+coverage.out
+
+# Dependency directories
+vendor/
+
+# Build directories
+/bin/
+/dist/
+
+# Package objects
+/pkg/
+
+# Go workspace
+go.work
+go.work.sum
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# Environment and secret files
+.env
+.env.*
+
+# Logs
+*.log
+
+# Mac/Windows thumbnails
+Thumbs.db
+
+# Generated files
+generated/
