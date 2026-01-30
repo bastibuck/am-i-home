@@ -6,6 +6,16 @@ import (
 	"testing"
 )
 
+// splitLines splits output into lines, removing only the trailing newline
+// (preserving trailing spaces on each line).
+func splitLines(s string) []string {
+	s = strings.TrimSuffix(s, "\n")
+	if s == "" {
+		return nil
+	}
+	return strings.Split(s, "\n")
+}
+
 func TestPrintStructTable(t *testing.T) {
 	type Device struct {
 		Name   string
@@ -25,15 +35,34 @@ func TestPrintStructTable(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		output := buf.String()
-		if !strings.Contains(output, "Name") || !strings.Contains(output, "IP Address") || !strings.Contains(output, "Active") {
-			t.Errorf("expected headers in output, got:\n%s", output)
+		lines := splitLines(buf.String())
+
+		// Verify row count: header + separator + 2 data rows
+		if len(lines) != 4 {
+			t.Fatalf("expected 4 lines (header, separator, 2 rows), got %d:\n%s", len(lines), buf.String())
 		}
-		if !strings.Contains(output, "Phone") || !strings.Contains(output, "192.168.1.10") {
-			t.Errorf("expected row data in output, got:\n%s", output)
+
+		// Verify complete header row with proper spacing
+		// "IP Address" (10 chars) is longest in column 2, so "192.168.1.10" (12 chars) determines width
+		expectedHeader := "Name   | IP Address   | Active"
+		if lines[0] != expectedHeader {
+			t.Errorf("expected header row:\n%q\ngot:\n%q", expectedHeader, lines[0])
 		}
-		if !strings.Contains(output, "---") {
-			t.Errorf("expected separator line in output, got:\n%s", output)
+
+		// Verify separator matches total width
+		expectedSeparator := strings.Repeat("-", len(expectedHeader))
+		if lines[1] != expectedSeparator {
+			t.Errorf("expected separator:\n%q\ngot:\n%q", expectedSeparator, lines[1])
+		}
+
+		// Verify data rows (last column is also padded to "Active" width of 6)
+		expectedRow1 := "Phone  | 192.168.1.10 | true  "
+		expectedRow2 := "Laptop | 192.168.1.20 | false "
+		if lines[2] != expectedRow1 {
+			t.Errorf("expected row 1:\n%q\ngot:\n%q", expectedRow1, lines[2])
+		}
+		if lines[3] != expectedRow2 {
+			t.Errorf("expected row 2:\n%q\ngot:\n%q", expectedRow2, lines[3])
 		}
 	})
 
@@ -48,12 +77,22 @@ func TestPrintStructTable(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		output := buf.String()
-		if strings.Contains(output, "---") {
-			t.Errorf("expected no separator line without headers, got:\n%s", output)
+		lines := splitLines(buf.String())
+
+		// Verify row count: only 1 data row, no header or separator
+		if len(lines) != 1 {
+			t.Fatalf("expected 1 line (data row only), got %d:\n%s", len(lines), buf.String())
 		}
-		if !strings.Contains(output, "Phone") {
-			t.Errorf("expected row data in output, got:\n%s", output)
+
+		// Verify no separator exists
+		if strings.Contains(buf.String(), "---") {
+			t.Errorf("expected no separator line without headers, got:\n%s", buf.String())
+		}
+
+		// Verify exact row content
+		expectedRow := "Phone | 192.168.1.10 | true"
+		if lines[0] != expectedRow {
+			t.Errorf("expected row:\n%q\ngot:\n%q", expectedRow, lines[0])
 		}
 	})
 
@@ -70,9 +109,37 @@ func TestPrintStructTable(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		output := buf.String()
-		if !strings.Contains(output, "Phone") || !strings.Contains(output, "Laptop") {
-			t.Errorf("expected row data in output, got:\n%s", output)
+		lines := splitLines(buf.String())
+
+		// Verify row count: header + separator + 3 data rows (including nil)
+		if len(lines) != 5 {
+			t.Fatalf("expected 5 lines (header, separator, 3 rows), got %d:\n%s", len(lines), buf.String())
+		}
+
+		// Verify header row
+		expectedHeader := "Name   | IP           | Active"
+		if lines[0] != expectedHeader {
+			t.Errorf("expected header row:\n%q\ngot:\n%q", expectedHeader, lines[0])
+		}
+
+		// Verify separator
+		expectedSeparator := strings.Repeat("-", len(expectedHeader))
+		if lines[1] != expectedSeparator {
+			t.Errorf("expected separator:\n%q\ngot:\n%q", expectedSeparator, lines[1])
+		}
+
+		// Verify data rows (nil row should have empty values, last column padded)
+		expectedRow1 := "Phone  | 192.168.1.10 | true  "
+		expectedRow2 := "       |              |       " // nil pointer row
+		expectedRow3 := "Laptop | 192.168.1.20 | false "
+		if lines[2] != expectedRow1 {
+			t.Errorf("expected row 1:\n%q\ngot:\n%q", expectedRow1, lines[2])
+		}
+		if lines[3] != expectedRow2 {
+			t.Errorf("expected row 2 (nil):\n%q\ngot:\n%q", expectedRow2, lines[3])
+		}
+		if lines[4] != expectedRow3 {
+			t.Errorf("expected row 3:\n%q\ngot:\n%q", expectedRow3, lines[4])
 		}
 	})
 
@@ -137,14 +204,27 @@ func TestPrintStructTable(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		output := buf.String()
-		// Should still print headers
-		if !strings.Contains(output, "Name") {
-			t.Errorf("expected headers in output for empty slice, got:\n%s", output)
+		lines := splitLines(buf.String())
+
+		// Verify row count: header + separator only
+		if len(lines) != 2 {
+			t.Fatalf("expected 2 lines (header, separator), got %d:\n%s", len(lines), buf.String())
+		}
+
+		// Verify header row (widths based on header text since no data)
+		expectedHeader := "Name | IP | Active"
+		if lines[0] != expectedHeader {
+			t.Errorf("expected header row:\n%q\ngot:\n%q", expectedHeader, lines[0])
+		}
+
+		// Verify separator
+		expectedSeparator := strings.Repeat("-", len(expectedHeader))
+		if lines[1] != expectedSeparator {
+			t.Errorf("expected separator:\n%q\ngot:\n%q", expectedSeparator, lines[1])
 		}
 	})
 
-	t.Run("pads columns correctly", func(t *testing.T) {
+	t.Run("pads columns correctly for long values", func(t *testing.T) {
 		var buf bytes.Buffer
 		devices := []Device{
 			{Name: "A", IP: "1.1.1.1", Active: true},
@@ -156,19 +236,32 @@ func TestPrintStructTable(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
-		if len(lines) < 4 {
-			t.Fatalf("expected at least 4 lines (header, separator, 2 rows), got %d", len(lines))
+		lines := splitLines(buf.String())
+
+		// Verify row count
+		if len(lines) != 4 {
+			t.Fatalf("expected 4 lines (header, separator, 2 rows), got %d:\n%s", len(lines), buf.String())
 		}
 
-		// All data lines should have consistent column separators
-		for _, line := range lines {
-			if strings.Contains(line, "---") {
-				continue
-			}
-			if strings.Count(line, " | ") != 2 {
-				t.Errorf("expected 2 column separators in line, got: %s", line)
-			}
+		// Column widths: "LongName" (8) > "N" (1), "192.168.100.200" (15) > "IP" (2), "Active" (6) > "false" (5)
+		expectedHeader := "N        | IP              | Active"
+		if lines[0] != expectedHeader {
+			t.Errorf("expected header row:\n%q\ngot:\n%q", expectedHeader, lines[0])
+		}
+
+		expectedSeparator := strings.Repeat("-", len(expectedHeader))
+		if lines[1] != expectedSeparator {
+			t.Errorf("expected separator:\n%q\ngot:\n%q", expectedSeparator, lines[1])
+		}
+
+		// Data rows (last column also padded to "Active" width of 6)
+		expectedRow1 := "A        | 1.1.1.1         | true  "
+		expectedRow2 := "LongName | 192.168.100.200 | false "
+		if lines[2] != expectedRow1 {
+			t.Errorf("expected row 1:\n%q\ngot:\n%q", expectedRow1, lines[2])
+		}
+		if lines[3] != expectedRow2 {
+			t.Errorf("expected row 2:\n%q\ngot:\n%q", expectedRow2, lines[3])
 		}
 	})
 }
